@@ -1,14 +1,21 @@
+//
+//  TaskMenuBarApp.swift
+//  TaskMenuBarApp
+//
+//  Created by Gaurav Avula on 4/22/25.
+//
+// TaskMenuBarApp.swift
+// TaskMenuBarApp.swift
+// TaskMenuBarApp.swift
 import SwiftUI
 import SwiftData
+import AppKit
 
 @main
 struct TaskMenuBarApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        MenuBarExtra("Tasks", systemImage: "list.bullet") {
-            ContentView()
-                .frame(width: 400, height: 600) // ✅ Set fixed size here
-                .modelContainer(for: TaskItem.self)
-        }
-        .menuBarExtraStyle(.window)
+        Settings {} // satisfy SwiftUI's requirement
     }
 }

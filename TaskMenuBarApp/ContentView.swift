@@ -1,7 +1,14 @@
 import SwiftUI
 import SwiftData
+import Combine
+
+class UndoState: ObservableObject {
+    var lastDeleted: TaskItem? = nil
+    var undoTimer: AnyCancellable? = nil
+}
 
 struct ContentView: View {
+    @ObservedObject var settings: AppSettings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var colorScheme
     @Query(sort: [SortDescriptor(\TaskItem.timestamp, order: .reverse)]) var items: [TaskItem]
@@ -9,32 +16,33 @@ struct ContentView: View {
     @State private var newTask = ""
     @State private var searchText = ""
     @State private var draggingItem: TaskItem?
+    @StateObject private var undoState = UndoState()
     @State private var showDeleteAllConfirmation = false
 
-    var sortedItems: [TaskItem] {
+    var filteredItems: [TaskItem] {
         items
             .filter { searchText.isEmpty || $0.title.localizedCaseInsensitiveContains(searchText) }
-            .sorted {
-                if $0.isCompleted == $1.isCompleted {
-                    return $0.timestamp > $1.timestamp
-                }
-                return !$0.isCompleted && $1.isCompleted
+    }
+
+    var sortedItems: [TaskItem] {
+        filteredItems.sorted {
+            if $0.isCompleted == $1.isCompleted {
+                return $0.timestamp > $1.timestamp
             }
+            return !$0.isCompleted && $1.isCompleted
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Search bar
             TextField("Search", text: $searchText)
                 .textFieldStyle(.roundedBorder)
                 .padding(.vertical, 4)
 
-            // Add task field
             HStack(spacing: 8) {
                 TextField("Add Task", text: $newTask, onCommit: addTask)
                     .textFieldStyle(.roundedBorder)
                     .padding(.vertical, 6)
-
                 Button(action: addTask) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
@@ -43,20 +51,16 @@ struct ContentView: View {
                 .buttonStyle(.plain)
             }
 
-            // Inline delete all confirmation
             if !items.isEmpty {
                 HStack {
                     Spacer()
                     if showDeleteAllConfirmation {
                         HStack(spacing: 8) {
-                            Text("Delete all tasks?")
-                                .font(.caption)
+                            Text("Delete all tasks?").font(.caption)
                             Button("Yes") {
                                 deleteAllTasks()
                                 showDeleteAllConfirmation = false
-                            }
-                            .foregroundColor(.red)
-
+                            }.foregroundColor(.red)
                             Button("No") {
                                 showDeleteAllConfirmation = false
                             }
@@ -74,60 +78,66 @@ struct ContentView: View {
                 }
             }
 
-            // Scrollable task list
-            ScrollView {
-                LazyVStack(spacing: 6) {
-                    ForEach(sortedItems) { item in
-                        HStack(spacing: 6) {
-                            Button(action: {
-                                item.isCompleted.toggle()
-                                try? modelContext.save()
-                            }) {
-                                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(item.isCompleted ? .green : .gray)
-                            }
-                            .buttonStyle(.plain)
+            if sortedItems.isEmpty {
+                Text("🔍 No tasks found.")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+                    .padding(.top, 20)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 6) {
+                        ForEach(sortedItems) { item in
+                            HStack(spacing: 6) {
+                                Button(action: {
+                                    item.isCompleted.toggle()
+                                    try? modelContext.save()
+                                    if shouldTriggerConfetti(tasks: sortedItems, settings: settings) {
+                                        // 🎉 Add your confetti logic here
+                                    }
+                                }) {
+                                    Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(item.isCompleted ? .green : .gray)
+                                }.buttonStyle(.plain)
 
-                            Text(item.title)
-                                .strikethrough(item.isCompleted)
-                                .foregroundColor(item.isCompleted ? .gray : .primary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .lineLimit(1)
+                                Text(item.title)
+                                    .strikethrough(item.isCompleted)
+                                    .foregroundColor(item.isCompleted ? .gray : .primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .lineLimit(1)
 
-                            Button(role: .destructive) {
-                                modelContext.delete(item)
-                                try? modelContext.save()
-                            } label: {
-                                Image(systemName: "trash")
+                                Button(role: .destructive) {
+                                    handleDelete(item: item, modelContext: modelContext, undoState: undoState, settings: settings)
+                                } label: {
+                                    Image(systemName: "trash")
+                                }.buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
+                            .padding(.vertical, 4)
+                            .padding(.leading, 8)
+                            .padding(.trailing, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
+                            )
+                            .onDrag {
+                                draggingItem = item
+                                return NSItemProvider(object: item.title as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: TaskDropDelegate(
+                                item: item,
+                                draggingItem: $draggingItem,
+                                onMove: reorderItems
+                            ))
                         }
-                        .padding(.vertical, 4)
-                        .padding(.leading, 8)
-                        .padding(.trailing, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
-                        )
-                        .onDrag {
-                            draggingItem = item
-                            return NSItemProvider(object: item.title as NSString)
-                        }
-                        .onDrop(of: [.text], delegate: TaskDropDelegate(
-                            item: item,
-                            draggingItem: $draggingItem,
-                            onMove: reorderItems
-                        ))
                     }
                 }
+                .frame(maxHeight: 250)
             }
-            .frame(
-                minHeight: CGFloat(min(sortedItems.count, 3)) * 32,
-                maxHeight: CGFloat(min(sortedItems.count, 20)) * 32
-            )
         }
         .padding(12)
-        .frame(width: 375)
+        .frame(width: 375, height: 500) // ✅ Fixed size instead of dynamic height
+        
+
     }
 
     private func addTask() {
@@ -135,7 +145,8 @@ struct ContentView: View {
         let task = TaskItem(title: newTask, timestamp: Date(), isCompleted: false)
         modelContext.insert(task)
         try? modelContext.save()
-        newTask = "" // ✅ Clear text field
+        print("✅ Added Task: \(task.title)")
+        newTask = ""
     }
 
     private func deleteAllTasks() {
@@ -146,6 +157,13 @@ struct ContentView: View {
     }
 
     private func reorderItems(from dragging: TaskItem, to target: TaskItem) {
+        guard settings.enableAnimation else { return reorderWithoutAnimation(from: dragging, to: target) }
+        withAnimation {
+            reorderWithoutAnimation(from: dragging, to: target)
+        }
+    }
+
+    private func reorderWithoutAnimation(from dragging: TaskItem, to target: TaskItem) {
         guard let fromIndex = sortedItems.firstIndex(of: dragging),
               let toIndex = sortedItems.firstIndex(of: target),
               fromIndex != toIndex else { return }
@@ -176,4 +194,26 @@ struct TaskDropDelegate: DropDelegate {
     func dropUpdated(info: DropInfo) -> DropProposal? {
         DropProposal(operation: .move)
     }
+}
+
+func handleDelete(item: TaskItem, modelContext: ModelContext, undoState: UndoState, settings: AppSettings) {
+    if settings.enableUndoDelete {
+        undoState.lastDeleted = item
+        modelContext.delete(item)
+        try? modelContext.save()
+
+        undoState.undoTimer?.cancel()
+        undoState.undoTimer = Just(())
+            .delay(for: .seconds(5), scheduler: DispatchQueue.main)
+            .sink { _ in
+                undoState.lastDeleted = nil
+            }
+    } else {
+        modelContext.delete(item)
+        try? modelContext.save()
+    }
+}
+
+func shouldTriggerConfetti(tasks: [TaskItem], settings: AppSettings) -> Bool {
+    settings.showConfetti && !tasks.isEmpty && tasks.allSatisfy { $0.isCompleted }
 }
