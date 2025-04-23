@@ -22,9 +22,9 @@ Clarity is a sleek and minimalistic macOS menu bar application that helps you tr
 
 | Feature | Screenshot |
 |--------|-------------|
-| 🧭 **Task Input & List View** | ![Task List](./Screenshot-1.png) |
-| 🖱️ **Right-Click Menu** | ![Right Click Menu](./Screenshot-2.png) |
-| ⚙️ **Settings Panel** | ![Settings](./Screenshot-3.png) |
+| 🧭 **Task Input & List View** | ![Task List](screenshots/Screenshot-1.png) |
+| 🖱️ **Right-Click Menu** | ![Right Click Menu](screenshots/Screenshot-2.png) |
+| ⚙️ **Settings Panel** | ![Settings](screenshots/Screenshot-3.png) |
 
 ---
 
