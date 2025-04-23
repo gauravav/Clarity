@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "checklist", accessibilityDescription: "Tasks")
+            button.image = NSImage(systemSymbolName: "bubble.left", accessibilityDescription: "Tasks")
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.action = #selector(statusBarButtonClicked(_:))
         }
