@@ -24,6 +24,8 @@ struct ContentView: View {
     @State private var hoveredDeleteID: UUID? = nil
     @State private var recentlyDeletedID: UUID? = nil
     @State private var trigger: Int = 0
+    @State private var timer: Timer? = nil
+    @State private var remainingTime: Int = 25 * 60
 
 
     var sortedItems: [TaskItem] {
@@ -187,7 +189,41 @@ struct ContentView: View {
             }
             .padding(.top, 8)
             .padding(.bottom, 12)
-            .confettiCannon(trigger: $trigger, num: 50, openingAngle: Angle(degrees: 0), closingAngle: Angle(degrees: 360), radius: 200)}
+            .confettiCannon(trigger: $trigger, num: 50, openingAngle: Angle(degrees: 0), closingAngle: Angle(degrees: 360), radius: 200)
+
+            Divider().padding(.top, 8)
+
+            VStack(spacing: 6) {
+                HStack(spacing: 12) {
+                    Text("Pomodoro Timer")
+                        .font(.caption)
+                        .bold()
+                    Button("Start") {
+                        timer?.invalidate()
+                        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                            if remainingTime > 0 {
+                                remainingTime -= 1
+                            } else {
+                                timer?.invalidate()
+                            }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Reset") {
+                        timer?.invalidate()
+                        remainingTime = 25 * 60
+                    }
+                    .buttonStyle(.bordered)
+
+                    Text(String(format: "%02d:%02d", remainingTime / 60, remainingTime % 60))
+                        .monospacedDigit()
+                        .font(.headline)
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 8)
+        }
         .frame(width: 375, height: 500) // ✅ Fixed popup size
     }
 
