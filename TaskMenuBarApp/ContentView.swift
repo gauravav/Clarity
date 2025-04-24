@@ -159,7 +159,6 @@ struct ContentView: View {
                                 )
                                 .scaleEffect(draggingItem?.id == item.id ? 1.05 : 1.0)
                                 .opacity(draggingItem?.id == item.id ? 0.8 : 1.0)
-                                .rotationEffect(.degrees(draggingItem?.id == item.id ? 3 : 0))
                                 .shadow(color: .black.opacity(draggingItem?.id == item.id ? 0.2 : 0), radius: 6, x: 0, y: 3)
                                 .animation(.spring(response: 0.4, dampingFraction: 0.7), value: draggingItem)
                                 .onDrag {
