@@ -1,6 +1,8 @@
 import SwiftUI
 import SwiftData
 import Combine
+import ConfettiSwiftUI
+
 
 class UndoState: ObservableObject {
     var lastDeleted: TaskItem? = nil
@@ -21,6 +23,8 @@ struct ContentView: View {
     @State private var animateCheckmark = false
     @State private var hoveredDeleteID: UUID? = nil
     @State private var recentlyDeletedID: UUID? = nil
+    @State private var trigger: Int = 0
+
 
     var sortedItems: [TaskItem] {
         items.sorted {
@@ -113,7 +117,7 @@ struct ContentView: View {
                                         item.isCompleted.toggle()
                                         try? modelContext.save()
                                         if shouldTriggerConfetti(tasks: sortedItems, settings: settings) {
-                                            // 🎉 Confetti logic
+                                            trigger += 1
                                         }
                                     }) {
                                         Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -183,7 +187,7 @@ struct ContentView: View {
             }
             .padding(.top, 8)
             .padding(.bottom, 12)
-        }
+            .confettiCannon(trigger: $trigger, num: 50, openingAngle: Angle(degrees: 0), closingAngle: Angle(degrees: 360), radius: 200)}
         .frame(width: 375, height: 500) // ✅ Fixed popup size
     }
 
@@ -193,6 +197,7 @@ struct ContentView: View {
         let task = TaskItem(title: newTask, timestamp: Date(), isCompleted: false)
         modelContext.insert(task)
         try? modelContext.save()
+//        trigger += 1
 
         DispatchQueue.main.async {
             newTask = "" // ✅ Reset AFTER current runloop to trigger re-render

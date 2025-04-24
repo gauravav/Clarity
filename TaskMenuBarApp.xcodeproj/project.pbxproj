@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2923C2312DBAA32700E15516 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 2923C2302DBAA32700E15516 /* ConfettiSwiftUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		2990BB982DB8076B00BAB46A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2923C2312DBAA32700E15516 /* ConfettiSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = TaskMenuBarApp;
 			packageProductDependencies = (
+				2923C2302DBAA32700E15516 /* ConfettiSwiftUI */,
 			);
 			productName = TaskMenuBarApp;
 			productReference = 2990BB872DB8076A00BAB46A /* TaskMenuBarApp.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 2990BB7E2DB8076A00BAB46A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2923C22F2DBAA32700E15516 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2990BB882DB8076A00BAB46A /* Products */;
 			projectDirPath = "";
@@ -570,6 +579,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2923C22F2DBAA32700E15516 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2923C2302DBAA32700E15516 /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2923C22F2DBAA32700E15516 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2990BB7F2DB8076A00BAB46A /* Project object */;
 }
