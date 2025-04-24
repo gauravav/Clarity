@@ -76,7 +76,7 @@ This project is licensed under the [MIT License](LICENSE).
 ## 🙌 Acknowledgements
 
 - Built using SwiftUI & SwiftData
-- Icon designed by [your name or tool used]
+- Icon designed by Gaurav
 - Inspired by simplicity and elegance
 
 ---
