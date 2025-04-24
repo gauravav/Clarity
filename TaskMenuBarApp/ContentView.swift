@@ -151,6 +151,9 @@ struct ContentView: View {
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
                                 )
+                                .scaleEffect(draggingItem?.id == item.id ? 1.05 : 1.0)
+                                .opacity(draggingItem?.id == item.id ? 0.8 : 1.0)
+                                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: draggingItem)
                                 .onDrag {
                                     draggingItem = item
                                     return NSItemProvider(object: item.title as NSString)
