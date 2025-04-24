@@ -15,6 +15,7 @@ struct ContentView: View {
 
     @State private var newTask = ""
     @State private var draggingItem: TaskItem?
+    @State private var potentialDropTargetID: UUID?
     @StateObject private var undoState = UndoState()
     @State private var showDeleteAllConfirmation = false
     @State private var animateCheckmark = false
@@ -100,12 +101,13 @@ struct ContentView: View {
                     ScrollView {
                         LazyVStack(spacing: 6) {
                             ForEach(sortedItems) { item in
-                                if let dragging = draggingItem, dragging.id != item.id, let fromIndex = sortedItems.firstIndex(of: dragging), let toIndex = sortedItems.firstIndex(of: item), abs(fromIndex - toIndex) == 1 {
+                                if potentialDropTargetID == item.id {
                                     Spacer()
                                         .frame(height: 20)
                                         .transition(.opacity)
-                                        .animation(.easeInOut(duration: 0.2), value: draggingItem)
+                                        .animation(.easeInOut(duration: 0.2), value: potentialDropTargetID)
                                 }
+                                let isDragging = draggingItem?.id == item.id
                                 HStack(spacing: 6) {
                                     Button(action: {
                                         item.isCompleted.toggle()
@@ -157,10 +159,10 @@ struct ContentView: View {
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
                                 )
-                                .scaleEffect(draggingItem?.id == item.id ? 1.05 : 1.0)
-                                .opacity(draggingItem?.id == item.id ? 0.8 : 1.0)
-                                .shadow(color: .black.opacity(draggingItem?.id == item.id ? 0.2 : 0), radius: 6, x: 0, y: 3)
-                                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: draggingItem)
+                                .scaleEffect(isDragging ? 1.05 : 1.0)
+                                .opacity(isDragging ? 0.8 : 1.0)
+                                .shadow(color: .black.opacity(isDragging ? 0.2 : 0), radius: 6, x: 0, y: 3)
+                                .animation(.default, value: isDragging)
                                 .onDrag {
                                     if settings.enableHaptics {
                                         NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
@@ -168,7 +170,7 @@ struct ContentView: View {
                                     draggingItem = item
                                     return NSItemProvider(object: item.title as NSString)
                                 }
-                                .onDrop(of: [.text], delegate: TaskDropDelegate(
+                                .onDrop(of: [.text], delegate: SimpleDropDelegate(
                                     item: item,
                                     draggingItem: $draggingItem,
                                     onMove: reorderItems
@@ -251,7 +253,8 @@ struct ContentView: View {
 
 }
 
-struct TaskDropDelegate: DropDelegate {
+
+struct SimpleDropDelegate: DropDelegate {
     let item: TaskItem
     @Binding var draggingItem: TaskItem?
     let onMove: (TaskItem, TaskItem) -> Void
@@ -263,8 +266,9 @@ struct TaskDropDelegate: DropDelegate {
         return true
     }
 
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
+    func dropEntered(info: DropInfo) {
+        guard let dragging = draggingItem, dragging != item else { return }
+        onMove(dragging, item)
     }
 }
 
