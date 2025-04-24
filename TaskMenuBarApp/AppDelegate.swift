@@ -12,9 +12,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var popover = NSPopover()
     var settingsWindow: NSWindow?
+    let sharedSettings = AppSettings()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let contentView = ContentView(settings: AppSettings())
+        let contentView = ContentView(settings: sharedSettings)
             .modelContainer(for: TaskItem.self)
 
         popover.contentSize = NSSize(width: 400, height: 550)
@@ -60,7 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func openSettings() {
         if settingsWindow == nil {
-            let settingsView = SettingsView(settings: AppSettings())
+            let settingsView = SettingsView(settings: sharedSettings)
             let hostingController = NSHostingController(rootView: settingsView)
 
             settingsWindow = NSWindow(

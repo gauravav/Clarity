@@ -100,6 +100,12 @@ struct ContentView: View {
                     ScrollView {
                         LazyVStack(spacing: 6) {
                             ForEach(sortedItems) { item in
+                                if let dragging = draggingItem, dragging.id != item.id, let fromIndex = sortedItems.firstIndex(of: dragging), let toIndex = sortedItems.firstIndex(of: item), abs(fromIndex - toIndex) == 1 {
+                                    Spacer()
+                                        .frame(height: 20)
+                                        .transition(.opacity)
+                                        .animation(.easeInOut(duration: 0.2), value: draggingItem)
+                                }
                                 HStack(spacing: 6) {
                                     Button(action: {
                                         item.isCompleted.toggle()
@@ -157,7 +163,9 @@ struct ContentView: View {
                                 .shadow(color: .black.opacity(draggingItem?.id == item.id ? 0.2 : 0), radius: 6, x: 0, y: 3)
                                 .animation(.spring(response: 0.4, dampingFraction: 0.7), value: draggingItem)
                                 .onDrag {
-                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+                                    if settings.enableHaptics {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+                                    }
                                     draggingItem = item
                                     return NSItemProvider(object: item.title as NSString)
                                 }
