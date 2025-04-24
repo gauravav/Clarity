@@ -15,6 +15,7 @@ struct ContentView: View {
 
     @State private var newTask = ""
     @State private var draggingItem: TaskItem?
+    @State private var potentialDropTargetID: UUID?
     @StateObject private var undoState = UndoState()
     @State private var showDeleteAllConfirmation = false
     @State private var animateCheckmark = false
@@ -100,6 +101,13 @@ struct ContentView: View {
                     ScrollView {
                         LazyVStack(spacing: 6) {
                             ForEach(sortedItems) { item in
+                                if potentialDropTargetID == item.id {
+                                    Spacer()
+                                        .frame(height: 20)
+                                        .transition(.opacity)
+                                        .animation(.easeInOut(duration: 0.2), value: potentialDropTargetID)
+                                }
+                                let isDragging = draggingItem?.id == item.id
                                 HStack(spacing: 6) {
                                     Button(action: {
                                         item.isCompleted.toggle()
@@ -151,11 +159,18 @@ struct ContentView: View {
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
                                 )
+                                .scaleEffect(isDragging ? 1.05 : 1.0)
+                                .opacity(isDragging ? 0.8 : 1.0)
+                                .shadow(color: .black.opacity(isDragging ? 0.2 : 0), radius: 6, x: 0, y: 3)
+                                .animation(.default, value: isDragging)
                                 .onDrag {
+                                    if settings.enableHaptics {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+                                    }
                                     draggingItem = item
                                     return NSItemProvider(object: item.title as NSString)
                                 }
-                                .onDrop(of: [.text], delegate: TaskDropDelegate(
+                                .onDrop(of: [.text], delegate: SimpleDropDelegate(
                                     item: item,
                                     draggingItem: $draggingItem,
                                     onMove: reorderItems
@@ -196,9 +211,23 @@ struct ContentView: View {
     }
 
     private func reorderItems(from dragging: TaskItem, to target: TaskItem) {
-        guard settings.enableAnimation else { return reorderWithoutAnimation(from: dragging, to: target) }
-        withAnimation {
-            reorderWithoutAnimation(from: dragging, to: target)
+        guard let fromIndex = items.firstIndex(of: dragging),
+              let toIndex = items.firstIndex(of: target),
+              fromIndex != toIndex else { return }
+
+        var newOrder = items
+
+        let movedItem = newOrder.remove(at: fromIndex)
+        newOrder.insert(movedItem, at: toIndex)
+
+        // Animate timestamp update to visually reorder
+        withAnimation(.easeInOut(duration: 0.3)) {
+            for (index, item) in newOrder.enumerated() {
+                item.timestamp = Date().addingTimeInterval(Double(-index))
+                modelContext.insert(item)
+            }
+
+            try? modelContext.save()
         }
     }
 
@@ -224,7 +253,8 @@ struct ContentView: View {
 
 }
 
-struct TaskDropDelegate: DropDelegate {
+
+struct SimpleDropDelegate: DropDelegate {
     let item: TaskItem
     @Binding var draggingItem: TaskItem?
     let onMove: (TaskItem, TaskItem) -> Void
@@ -236,8 +266,9 @@ struct TaskDropDelegate: DropDelegate {
         return true
     }
 
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
+    func dropEntered(info: DropInfo) {
+        guard let dragging = draggingItem, dragging != item else { return }
+        onMove(dragging, item)
     }
 }
 

@@ -15,6 +15,7 @@ class AppSettings: ObservableObject {
     @Published var autoReset: ResetInterval = .off
     @Published var showMenuBarBadge: Bool = true
     @Published var autoLaunchOnLogin: Bool = false
+    @Published var enableHaptics: Bool = false
 
     enum ThemeMode: String, CaseIterable, Identifiable {
         case light, dark, system

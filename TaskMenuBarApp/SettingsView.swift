@@ -16,6 +16,7 @@ struct SettingsView: View {
                 Toggle("Drag-to-Reorder Animation", isOn: $settings.enableAnimation)
                 Toggle("Undo Last Delete", isOn: $settings.enableUndoDelete)
                 Toggle("Confetti on Completion", isOn: $settings.showConfetti)
+                Toggle("Enable haptics", isOn: $settings.enableHaptics)
             }
 
             Section(header: Text("Appearance")) {
