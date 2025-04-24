@@ -196,9 +196,23 @@ struct ContentView: View {
     }
 
     private func reorderItems(from dragging: TaskItem, to target: TaskItem) {
-        guard settings.enableAnimation else { return reorderWithoutAnimation(from: dragging, to: target) }
-        withAnimation {
-            reorderWithoutAnimation(from: dragging, to: target)
+        guard let fromIndex = items.firstIndex(of: dragging),
+              let toIndex = items.firstIndex(of: target),
+              fromIndex != toIndex else { return }
+
+        var newOrder = items
+
+        let movedItem = newOrder.remove(at: fromIndex)
+        newOrder.insert(movedItem, at: toIndex)
+
+        // Animate timestamp update to visually reorder
+        withAnimation(.easeInOut(duration: 0.3)) {
+            for (index, item) in newOrder.enumerated() {
+                item.timestamp = Date().addingTimeInterval(Double(-index))
+                modelContext.insert(item)
+            }
+
+            try? modelContext.save()
         }
     }
 
